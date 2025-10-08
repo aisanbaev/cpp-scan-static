@@ -5,6 +5,8 @@
         "context": "."
     },
     "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+    "remoteUser": "dev",
+    "postStartCommand": "sudo chown -R 1000:1000 /workspaces/cpp-scan-static && sudo chmod -R a+w /workspaces/cpp-scan-static",
     "customizations": {
       "vscode": {
         "extensions": [
