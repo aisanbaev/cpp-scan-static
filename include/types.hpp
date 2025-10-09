@@ -30,13 +30,15 @@ struct fixed_string {
             data[i++] = *begin++;
         }
     }
+
+    constexpr std::size_t size() const { return N; }
 };
 
 
 // Шаблонный класс, хранящий fixed_string достаточной длины для хранения ошибки парсинга
-struct parse_error : fixed_string<41> {
+struct parse_error : fixed_string<50> {
     template <std::size_t M>
-    constexpr parse_error(const char (&str)[M]) : fixed_string<41>(str) {}
+    constexpr parse_error(const char (&str)[M]) : fixed_string<50>(str) {}
 };
 
 // Шаблонный класс для хранения результатов парсинга

@@ -1,96 +1,121 @@
 #pragma once
 
 #include <expected>
-
 #include "types.hpp"
+#include <array>
+#include <cstddef> 
 
 namespace stdx::details {
 
 // Шаблонный класс для хранения форматирующей строчки и ее особенностей
-// ваш код здесь
+template <auto Str>
 class format_string {
-    // ваш код здесь
-};
+public:
+    static constexpr auto source = Str;
 
-// Пользовательский литерал
-/*
-ваш код здесь
-ваш код здесь operator"" _fs()  сигнатуру также поменяйте
-{
-ваш код здесь
-}
-*/
+    static consteval std::expected<size_t, parse_error> get_number_placeholders() {
+        constexpr size_t N = Str.size();
+        if (!N)
+            return 0;
+        size_t placeholder_count = 0;
+        size_t pos = 0;
+        const size_t size = N - 1; // -1 для игнорирования нуль-терминатора
 
-// Функция для получения количества плейсхолдеров и проверки корректности формирующей строки
-// Функция закомментирована, так как еще не реализованы классы, которые она использует
-/*
-// Сделайте эту свободную функцию методом класса format_string
-template<fixed_string str>
-consteval std::expected<size_t, parse_error> get_number_placeholders() {
-    constexpr size_t N = str.size();
-    if (!N)
-        return 0;
-    size_t placeholder_count = 0;
-    size_t pos = 0;
-    const size_t size = N - 1; // -1 для игнорирования нуль-терминатора
+        while (pos < size) {
+            // Пропускаем все символы до '{'
+            if (Str.data[pos] != '{') {
+                ++pos;
+                continue;
+            }
 
-    while (pos < size) {
-        // Пропускаем все символы до '{'
-        if (str.data[pos] != '{') {
-            ++pos;
-            continue;
-        }
-
-        // Проверяем незакрытый плейсхолдер
-        if (pos + 1 >= size) {
-            return std::unexpected(parse_error{"Unclosed last placeholder"});
-        }
-
-        // Начало плейсхолдера
-        ++placeholder_count;
-        ++pos;
-
-        // Проверка спецификатора формата
-        if (str.data[pos] == '%') {
-            ++pos;
-            if (pos >= size) {
+            // Проверяем незакрытый плейсхолдер
+            if (pos + 1 >= size) {
                 return std::unexpected(parse_error{"Unclosed last placeholder"});
             }
 
-            // Проверяем допустимые спецификаторы
-            const char spec = str.data[pos];
-            constexpr char valid_specs[] = {'d', 'u', 'f', 's'};
-            bool valid = false;
+            // Начало плейсхолдера
+            ++placeholder_count;
+            ++pos;
 
-            for (const char s : valid_specs) {
-                if (spec == s) {
-                    valid = true;
-                    break;
+            // Проверка спецификатора формата
+            if (Str.data[pos] == '%') {
+                ++pos;
+                if (pos >= size) {
+                    return std::unexpected(parse_error{"Unclosed last placeholder"});
                 }
+
+                // Проверяем допустимые спецификаторы
+                const char spec = Str.data[pos];
+                constexpr char valid_specs[] = {'d', 'u', 'f', 's'};
+                bool valid = false;
+
+                for (const char s : valid_specs) {
+                    if (spec == s) {
+                        valid = true;
+                        break;
+                    }
+                }
+
+                if (!valid) {
+                    return std::unexpected(parse_error{"Invalid specifier."});
+                }
+                ++pos;
             }
 
-            if (!valid) {
-                return std::unexpected(parse_error{"Invalid specifier."});
+            // Проверяем закрывающую скобку
+            if (pos >= size || Str.data[pos] != '}') {
+                return std::unexpected(parse_error{"\'}\' hasn't been found in appropriate place"});
             }
             ++pos;
         }
 
-        // Проверяем закрывающую скобку
-        if (pos >= size || str.data[pos] != '}') {
-            return std::unexpected(parse_error{"\'}\' hasn't been found in appropriate place"});
-        }
-        ++pos;
+        return placeholder_count;
     }
 
-    return placeholder_count;
-}
-*/
+    // Статическое поле number_placeholders
+    static constexpr size_t number_placeholders = [] {
+        constexpr auto result = get_number_placeholders();
+        static_assert(result.has_value(), "get_number_placeholders failed");
+        return result.value();
+    }();
 
-// Функция для получения позиций плейсхолдеров
+    static consteval auto get_placeholder_positions() {
+        constexpr size_t N = Str.size();
+        std::array<std::pair<size_t, size_t>, number_placeholders> positions{};
+        size_t idx = 0;
+        size_t pos = 0;
+        const size_t size = N - 1;
 
-// ваш код здесь
-void get_placeholder_positions() {  // сигнатуру тоже нужно изменить
-    // ваш код здесь
+        while (pos < size) {
+            if (Str.data[pos] != '{') {
+                ++pos;
+                continue;
+            }
+
+            size_t start = pos;
+            ++pos; // пропускаем '{'
+
+            if (pos < size && Str.data[pos] == '%') {
+                ++pos; // пропускаем '%'
+                ++pos; // пропускаем спецификатор
+            }
+
+            if (pos < size && Str.data[pos] == '}') {
+                positions[idx++] = {start, pos};
+                ++pos; // пропускаем '}'
+            }
+        }
+
+        return positions;
+    }
+
+    // Статическое поле placeholder_positions
+    static constexpr auto placeholder_positions = get_placeholder_positions();
+};
+
+template <stdx::details::fixed_string Str>
+constexpr auto operator"" _fs() {
+    return stdx::details::format_string<Str>{};
 }
 
 } // namespace stdx::details
