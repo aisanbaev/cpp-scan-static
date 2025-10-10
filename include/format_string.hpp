@@ -113,9 +113,13 @@ public:
     static constexpr auto placeholder_positions = get_placeholder_positions();
 };
 
+namespace literals {
+
 template <stdx::details::fixed_string Str>
-constexpr auto operator"" _fs() {
+consteval auto operator"" _fs() {
     return stdx::details::format_string<Str>{};
 }
+
+} // namespace literals
 
 } // namespace stdx::details
