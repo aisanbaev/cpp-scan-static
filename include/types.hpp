@@ -1,4 +1,6 @@
 #pragma once
+
+#include <algorithm>
 #include <cstddef>
 #include <tuple>
 
@@ -10,25 +12,17 @@ struct fixed_string {
     char data[N] = {};
 
     constexpr fixed_string(const char (&str)[N]) {
-        for (std::size_t i = 0; i < N; ++i) {
-            data[i] = str[i];
-        }
+        std::copy_n(str, N, data);
     }
 
     template <std::size_t M>
-    constexpr fixed_string(const char (&str)[M]) 
-        requires (M <= N) 
-    {
-        for (std::size_t i = 0; i < M - 1; ++i) {
-            data[i] = str[i];
-        }
+    constexpr fixed_string(const char (&str)[M]) requires (M <= N) {
+        std::copy_n(str, M - 1, data);
     }
 
     constexpr fixed_string(const char* begin, const char* end) {
-        std::size_t i = 0;
-        while (begin != end && i < N) {
-            data[i++] = *begin++;
-        }
+        const std::size_t len = end - begin;
+        std::copy_n(begin, (len < N ? len : N), data);
     }
 
     constexpr std::size_t size() const { return N; }
