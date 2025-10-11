@@ -46,7 +46,7 @@ public:
 
                 // Проверяем допустимые спецификаторы
                 const char spec = Str.data[pos];
-                constexpr char valid_specs[] = {'d', 'u', 'f', 's'};
+                constexpr char valid_specs[] = {'d', 'u', 's'};
                 bool valid = false;
 
                 for (const char s : valid_specs) {

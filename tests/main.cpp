@@ -46,7 +46,7 @@ static_assert("Hello {}"_fs.number_placeholders == 1);
 static_assert("Hello {} and {%d}"_fs.number_placeholders == 2);
 static_assert("No placeholders here"_fs.number_placeholders == 0);
 static_assert("Multiple {} {} {}"_fs.number_placeholders == 3);
-static_assert("Value: {%d}, Text: {%s}, Float: {%f}"_fs.number_placeholders == 3);
+static_assert("Value: {%d}, Text: {%s}, Unsigned: {%u}"_fs.number_placeholders == 3);
 
 // === 3. Проверка позиций плейсхолдеров ===
 static_assert("Hello"_fs.number_placeholders == 0);
