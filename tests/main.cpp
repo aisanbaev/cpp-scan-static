@@ -188,6 +188,29 @@ static_assert(std::get<0>(test_const_int.values()) == 42);
 constexpr auto test_const_string_view = stdx::scan<"{}"_fs, "test", const std::string_view>();
 static_assert(std::get<0>(test_const_string_view.values()) == "test");
 
+// ========== Тестирование проверки соответствия спецификаторов и типов ==========
+constexpr auto test_spec_match1 = stdx::scan<"{%d}"_fs, "-42", int>();
+constexpr auto test_spec_match2 = stdx::scan<"{%d}"_fs, "42", int16_t>();
+constexpr auto test_spec_match3 = stdx::scan<"{%u}"_fs, "123", unsigned int>();
+constexpr auto test_spec_match4 = stdx::scan<"{%u}"_fs, "255", uint8_t>();
+constexpr auto test_spec_match5 = stdx::scan<"{%s}"_fs, "hello", std::string_view>();
+
+// ========== Тесты, которые должны вызывать ошибки компиляции ==========
+// спецификатор '%d' требует знаковый целочисленный тип
+// constexpr auto test_spec_error1 = stdx::scan<"{%d}"_fs, "123", unsigned int>();
+
+// спецификатор '%u' требует беззнаковый целочисленный тип  
+// constexpr auto test_spec_error2 = stdx::scan<"{%u}"_fs, "-123", int>();
+
+// спецификатор '%s' требует std::string_view
+// constexpr auto test_spec_error3 = stdx::scan<"{%s}"_fs, "hello", int>();
+
+// отрицательное число для беззнакового типа
+// constexpr auto test_spec_error4 = stdx::scan<"{%u}"_fs, "-1", unsigned int>();
+
+// спецификатор '%d' с std::string_view
+// constexpr auto test_spec_error5 = stdx::scan<"{%d}"_fs, "text", std::string_view>();
+
 // ========== Тесты НЕ поддерживаемых типов (вызывают ошибки компиляции) ==========
 // 1. std::string (должен быть string_view)
 // constexpr auto test_string = stdx::scan<"{}"_fs, "test", std::string>();

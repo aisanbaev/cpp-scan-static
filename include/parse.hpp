@@ -30,10 +30,51 @@ template<typename T>
 concept SupportedScanType = 
     SupportedIntegerType<T> || SupportedStringType<T>;
 
+// Функция для проверки соответствия спецификатора и типа
+template<typename T, char Spec>
+consteval void check_specifier_match() {
+    using BaseType = std::remove_cv_t<T>;
+    
+    if constexpr (Spec == 'd') {
+        static_assert(SupportedIntegerType<T> && std::is_signed_v<BaseType>, 
+            "Specifier '%d' requires signed integral type");
+    } else if constexpr (Spec == 'u') {
+        static_assert(SupportedIntegerType<T> && std::is_unsigned_v<BaseType>,
+            "Specifier '%u' requires unsigned integral type");
+    } else if constexpr (Spec == 's') {
+        static_assert(SupportedStringType<T>,
+            "Specifier '%s' requires std::string_view type");
+    }
+}
+
+// Функция для получения спецификатора из плейсхолдера
+template<auto Fmt, std::size_t I>
+consteval char get_specifier() {
+    constexpr auto& placeholder = Fmt.placeholder_positions[I];
+    constexpr std::string_view fmt_sv(Fmt.source.data, Fmt.source.size() - 1);
+    constexpr auto placeholder_sv = fmt_sv.substr(placeholder.first, placeholder.second - placeholder.first + 1);
+    
+    constexpr bool has_d_spec = placeholder_sv.find("{%d}") != std::string_view::npos;
+    constexpr bool has_u_spec = placeholder_sv.find("{%u}") != std::string_view::npos;
+    constexpr bool has_s_spec = placeholder_sv.find("{%s}") != std::string_view::npos;
+    
+    if constexpr (has_d_spec) {
+        return 'd';
+    } else if constexpr (has_u_spec) {
+        return 'u';
+    } else if constexpr (has_s_spec) {
+        return 's';
+    } else {
+        return '\0';
+    }
+}
+
 // Парсинг целых чисел
 template<SupportedIntegerType T>
 consteval std::expected<T, parse_error> parse_value(std::string_view str) {
-    T value{};
+    using BaseType = std::remove_cv_t<T>;
+    
+    BaseType value{};
     auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), value);
     
     if (ec != std::errc{}) {
@@ -44,7 +85,7 @@ consteval std::expected<T, parse_error> parse_value(std::string_view str) {
         return std::unexpected(parse_error{"Extra characters after integer"});
     }
     
-    return value;
+    return static_cast<T>(value);
 }
 
 // Парсинг строк
@@ -110,6 +151,12 @@ consteval auto get_current_source_for_parsing() {
 template<int I, auto Fmt, auto Source, SupportedScanType T>
 consteval auto parse_input() {
     static_assert(I >= 0 && I < Fmt.number_placeholders, "Invalid placeholder index");
+
+     // Проверяем соответствие спецификатора и типа
+    constexpr char spec = get_specifier<Fmt, I>();
+    if constexpr (spec != '\0') {
+        check_specifier_match<T, spec>();
+    }
     
     constexpr auto bounds = get_current_source_for_parsing<I, Fmt, Source>();
     constexpr size_t start = bounds.first;
