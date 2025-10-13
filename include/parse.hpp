@@ -49,7 +49,7 @@ consteval void check_specifier_match() {
 
 // Функция для получения спецификатора из плейсхолдера
 template<auto Fmt, std::size_t I>
-consteval char get_specifier() {
+consteval std::optional<char> get_specifier() {
     constexpr auto& placeholder = Fmt.placeholder_positions[I];
     constexpr std::string_view fmt_sv(Fmt.source.data, Fmt.source.size() - 1);
     constexpr auto placeholder_sv = fmt_sv.substr(placeholder.first, placeholder.second - placeholder.first + 1);
@@ -65,7 +65,7 @@ consteval char get_specifier() {
     } else if constexpr (has_s_spec) {
         return 's';
     } else {
-        return '\0';
+        return std::nullopt;
     }
 }
 
@@ -153,9 +153,9 @@ consteval auto parse_input() {
     static_assert(I >= 0 && I < Fmt.number_placeholders, "Invalid placeholder index");
 
      // Проверяем соответствие спецификатора и типа
-    constexpr char spec = get_specifier<Fmt, I>();
-    if constexpr (spec != '\0') {
-        check_specifier_match<T, spec>();
+    constexpr auto spec = get_specifier<Fmt, I>();
+    if constexpr (spec.has_value()) {
+        check_specifier_match<T, spec.value()>();
     }
     
     constexpr auto bounds = get_current_source_for_parsing<I, Fmt, Source>();

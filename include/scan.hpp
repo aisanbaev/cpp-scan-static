@@ -6,22 +6,6 @@
 
 namespace stdx {
 
-// Вспомогательная функция для определения типа по спецификатору
-template<auto Fmt, std::size_t I, typename DefaultT>
-consteval auto get_type_for_placeholder() {
-    constexpr char spec = details::get_specifier<Fmt, I>();
-    
-    if constexpr (spec == 'd') {
-        return int{};
-    } else if constexpr (spec == 'u') {
-        return unsigned{};
-    } else if constexpr (spec == 's') {
-        return std::string_view{};
-    } else {
-        return DefaultT{};
-    }
-}
-
 // Главная функция scan
 template <details::format_string fmt, details::fixed_string source, typename... Ts>
 consteval details::scan_result<Ts...> scan() {
